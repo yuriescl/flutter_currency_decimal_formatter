@@ -22,7 +22,7 @@ void main() {
     });
     test('ja_JP', () {
       CurrencyFormatter formatter =
-          CurrencyFormatter(locale: 'ja_JP', symbol: '');
+          CurrencyFormatter(locale: 'en_US', currency: 'JPY', symbol: '');
       expect(formatter.stringFromString('2512.43123'), '2,512');
     });
     test('pt_BR', () {

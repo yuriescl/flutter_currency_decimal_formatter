@@ -6,24 +6,28 @@ import 'package:intl/intl.dart' show NumberFormat;
 
 class CurrencyFormatter {
   final String? locale;
+  final String? currency;
   final String? symbol;
   int? decimalDigits;
 
-  CurrencyFormatter({this.locale, this.symbol, this.decimalDigits}) {
+  late final NumberFormat _format;
+
+  CurrencyFormatter(
+      {this.locale, this.currency, this.symbol, this.decimalDigits}) {
+    _format = NumberFormat.currency(
+        locale: locale,
+        name: currency,
+        symbol: symbol,
+        decimalDigits: decimalDigits);
+    decimalDigits = _format.decimalDigits;
     if (decimalDigits == null) {
-      decimalDigits = NumberFormat.currency(locale: locale).decimalDigits;
-      if (decimalDigits == null) {
-        throw ArgumentError(
-            'Failed to get the amount of decimal digits for locale $locale. '
-            'Provide either decimalDigits or a different locale');
-      }
+      throw ArgumentError(
+          'Failed to get decimalDigits for the specified currency');
     }
   }
 
   Decimal decimalFromString(String text) {
-    NumberFormat format = NumberFormat.currency(
-        symbol: symbol, locale: locale, decimalDigits: decimalDigits);
-    num parsed = format.parse(text);
+    num parsed = _format.parse(text);
     return Decimal.parse(parsed.toStringAsFixed(decimalDigits!));
   }
 
@@ -32,14 +36,12 @@ class CurrencyFormatter {
   }
 
   String stringFromString(String text) {
-    NumberFormat format = NumberFormat.currency(
-        symbol: symbol, locale: locale, decimalDigits: decimalDigits);
-    num parsed = format.parse(text);
+    num parsed = _format.parse(text);
     Decimal value = Decimal.parse(parsed.toStringAsFixed(decimalDigits!));
     if (value == Decimal.zero) {
-      return '';
+      return value.toStringAsFixed(decimalDigits!);
     }
-    String result = format.format(parsed);
+    String result = _format.format(parsed);
     // workaround for https://github.com/dart-lang/intl/issues/376
     if (symbol == '') {
       try {
@@ -52,9 +54,7 @@ class CurrencyFormatter {
   }
 
   String stringFromDecimal(Decimal decimal) {
-    NumberFormat format = NumberFormat.currency(
-        symbol: symbol, locale: locale, decimalDigits: decimalDigits);
-    String result = format.format(decimal.toDouble());
+    String result = _format.format(decimal.toDouble());
     // workaround for https://github.com/dart-lang/intl/issues/376
     if (symbol == '') {
       try {
@@ -71,14 +71,18 @@ class CurrencyTextInputFormatter extends TextInputFormatter {
   late final CurrencyFormatter _formatter;
 
   CurrencyTextInputFormatter(
-      {String? locale, String? symbol, int? decimalDigits}) {
+      {String? locale, String? currency, String? symbol, int? decimalDigits}) {
     _formatter = CurrencyFormatter(
-        locale: locale, symbol: symbol, decimalDigits: decimalDigits);
+        locale: locale,
+        currency: currency,
+        symbol: symbol,
+        decimalDigits: decimalDigits);
   }
 
   CurrencyTextInputFormatter.fromFormatter(CurrencyFormatter formatter) {
     _formatter = CurrencyFormatter(
         locale: formatter.locale,
+        currency: formatter.currency,
         symbol: formatter.symbol,
         decimalDigits: formatter.decimalDigits);
   }
