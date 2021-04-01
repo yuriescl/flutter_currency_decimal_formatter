@@ -1,3 +1,7 @@
+## 0.0.4
+
+* receive same parameters as NumberFormat
+
 ## 0.0.3
 
 * documentation
