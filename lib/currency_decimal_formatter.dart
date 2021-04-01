@@ -7,11 +7,16 @@ import 'package:intl/intl.dart' show NumberFormat;
 class CurrencyFormatter {
   final String? locale;
   final String? symbol;
-  int decimalDigits;
+  int? decimalDigits;
 
-  CurrencyFormatter({this.locale, this.symbol, this.decimalDigits = -1}) {
-    if (decimalDigits == -1) {
-      decimalDigits = NumberFormat.currency(locale: locale).decimalDigits ?? 2;
+  CurrencyFormatter({this.locale, this.symbol, this.decimalDigits}) {
+    if (decimalDigits == null) {
+      decimalDigits = NumberFormat.currency(locale: locale).decimalDigits;
+      if (decimalDigits == null) {
+        throw ArgumentError(
+            'Failed to get the amount of decimal digits for locale $locale. '
+            'Provide either decimalDigits or a different locale');
+      }
     }
   }
 
@@ -19,18 +24,18 @@ class CurrencyFormatter {
     NumberFormat format = NumberFormat.currency(
         symbol: symbol, locale: locale, decimalDigits: decimalDigits);
     num parsed = format.parse(text);
-    return Decimal.parse(parsed.toStringAsFixed(decimalDigits));
+    return Decimal.parse(parsed.toStringAsFixed(decimalDigits!));
   }
 
   Decimal decimalFromDecimal(Decimal decimal) {
-    return Decimal.parse(decimal.toStringAsFixed(decimalDigits));
+    return Decimal.parse(decimal.toStringAsFixed(decimalDigits!));
   }
 
   String stringFromString(String text) {
     NumberFormat format = NumberFormat.currency(
         symbol: symbol, locale: locale, decimalDigits: decimalDigits);
     num parsed = format.parse(text);
-    Decimal value = Decimal.parse(parsed.toStringAsFixed(decimalDigits));
+    Decimal value = Decimal.parse(parsed.toStringAsFixed(decimalDigits!));
     if (value == Decimal.zero) {
       return '';
     }
@@ -66,7 +71,7 @@ class CurrencyTextInputFormatter extends TextInputFormatter {
   late final CurrencyFormatter _formatter;
 
   CurrencyTextInputFormatter(
-      {String? locale, String? symbol, int decimalDigits = -1}) {
+      {String? locale, String? symbol, int? decimalDigits}) {
     _formatter = CurrencyFormatter(
         locale: locale, symbol: symbol, decimalDigits: decimalDigits);
   }
@@ -90,7 +95,7 @@ class CurrencyTextInputFormatter extends TextInputFormatter {
           text: '',
           selection: TextSelection.fromPosition(TextPosition(offset: 0)));
     } else {
-      int decimalDigits = _formatter.decimalDigits;
+      int decimalDigits = _formatter.decimalDigits!;
       NumberFormat format = NumberFormat.currency(
           symbol: formatter.symbol,
           locale: formatter.locale,
