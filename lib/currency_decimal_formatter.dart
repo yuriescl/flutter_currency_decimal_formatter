@@ -1,5 +1,6 @@
 library currency_decimal_formatter;
 
+import 'dart:ui' show TextDirection;
 import 'package:flutter/services.dart';
 import 'package:decimal/decimal.dart' show Decimal;
 import 'package:intl/intl.dart' show NumberFormat;
@@ -46,7 +47,7 @@ class CurrencyFormatter {
     if (symbol == '') {
       try {
         int.parse(result[0]);
-      } on FormatException catch (e) {
+      } on FormatException {
         result = result.substring(1, result.length);
       }
     }
@@ -59,7 +60,7 @@ class CurrencyFormatter {
     if (symbol == '') {
       try {
         int.parse(result[0]);
-      } on FormatException catch (e) {
+      } on FormatException {
         result = result.substring(1, result.length);
       }
     }
@@ -69,6 +70,7 @@ class CurrencyFormatter {
 
 class CurrencyTextInputFormatter extends TextInputFormatter {
   final bool zeroIsEmpty;
+  final TextDirection textDirection;
   late final CurrencyFormatter _formatter;
 
   CurrencyTextInputFormatter(
@@ -76,7 +78,8 @@ class CurrencyTextInputFormatter extends TextInputFormatter {
       String? currency,
       String? symbol,
       int? decimalDigits,
-      this.zeroIsEmpty = false}) {
+      this.zeroIsEmpty = false,
+      this.textDirection = TextDirection.ltr}) {
     _formatter = CurrencyFormatter(
         locale: locale,
         currency: currency,
@@ -85,7 +88,7 @@ class CurrencyTextInputFormatter extends TextInputFormatter {
   }
 
   CurrencyTextInputFormatter.fromFormatter(CurrencyFormatter formatter,
-      {this.zeroIsEmpty = false}) {
+      {this.zeroIsEmpty = false, this.textDirection = TextDirection.ltr}) {
     _formatter = CurrencyFormatter(
         locale: formatter.locale,
         currency: formatter.currency,
@@ -107,7 +110,6 @@ class CurrencyTextInputFormatter extends TextInputFormatter {
     } else {
       int decimalDigits = _formatter.decimalDigits!;
       NumberFormat format = _formatter.format;
-      String? symbol = format.currencySymbol;
       String groupSep = format.symbols.GROUP_SEP;
       String decimalSep = format.symbols.DECIMAL_SEP;
 
@@ -159,21 +161,25 @@ class CurrencyTextInputFormatter extends TextInputFormatter {
 
       if (oldValue.text.length < newText.length) {
         int diff = newText.length - oldValue.text.length;
-        baseOffset += diff;
+        if (textDirection == TextDirection.ltr) {
+          baseOffset += diff;
+        } else {
+          baseOffset -= diff;
+        }
       } else if (oldValue.text.length > newText.length) {
         int diff = oldValue.text.length - newText.length;
         if (baseOffset == extentOffset) {
-          baseOffset -= diff;
+          if (textDirection == TextDirection.ltr) {
+            baseOffset -= diff;
+          } else {
+            baseOffset += diff;
+          }
         }
       }
       if (baseOffset > newText.length) {
         baseOffset = newText.length;
       } else if (baseOffset < 0) {
         baseOffset = 0;
-      }
-      while (baseOffset < newText.length &&
-          !RegExp('[0-9]').hasMatch(newText[baseOffset])) {
-        baseOffset += 1;
       }
       return TextEditingValue(
           text: newText,

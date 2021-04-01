@@ -1,3 +1,8 @@
+## 0.0.6
+
+* added zeroIsEmpty parameter
+* added textDirection parameter
+
 ## 0.0.5
 
 * fixed symbol baseOffset
