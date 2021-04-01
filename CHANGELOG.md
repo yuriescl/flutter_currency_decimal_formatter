@@ -1,3 +1,7 @@
+## 0.0.7
+
+* updated description
+
 ## 0.0.6
 
 * added zeroIsEmpty parameter
