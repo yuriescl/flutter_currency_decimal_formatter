@@ -1,3 +1,7 @@
+## 0.0.3
+
+* documentation
+
 ## 0.0.2
 
 * allow decimalDigits to be null
