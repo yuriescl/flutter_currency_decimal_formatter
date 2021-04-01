@@ -19,11 +19,11 @@ class CurrencyFormatter {
         name: currency,
         symbol: symbol,
         decimalDigits: decimalDigits);
-    decimalDigits = _format.decimalDigits;
-    if (decimalDigits == null) {
-      throw ArgumentError(
-          'Failed to get decimalDigits for the specified currency');
-    }
+    decimalDigits = _format.decimalDigits ?? 0;
+  }
+
+  NumberFormat get format {
+    return _format;
   }
 
   Decimal decimalFromString(String text) {
@@ -68,10 +68,15 @@ class CurrencyFormatter {
 }
 
 class CurrencyTextInputFormatter extends TextInputFormatter {
+  final bool zeroIsEmpty;
   late final CurrencyFormatter _formatter;
 
   CurrencyTextInputFormatter(
-      {String? locale, String? currency, String? symbol, int? decimalDigits}) {
+      {String? locale,
+      String? currency,
+      String? symbol,
+      int? decimalDigits,
+      this.zeroIsEmpty = false}) {
     _formatter = CurrencyFormatter(
         locale: locale,
         currency: currency,
@@ -79,7 +84,8 @@ class CurrencyTextInputFormatter extends TextInputFormatter {
         decimalDigits: decimalDigits);
   }
 
-  CurrencyTextInputFormatter.fromFormatter(CurrencyFormatter formatter) {
+  CurrencyTextInputFormatter.fromFormatter(CurrencyFormatter formatter,
+      {this.zeroIsEmpty = false}) {
     _formatter = CurrencyFormatter(
         locale: formatter.locale,
         currency: formatter.currency,
@@ -100,14 +106,18 @@ class CurrencyTextInputFormatter extends TextInputFormatter {
           selection: TextSelection.fromPosition(TextPosition(offset: 0)));
     } else {
       int decimalDigits = _formatter.decimalDigits!;
-      NumberFormat format = NumberFormat.currency(
-          symbol: formatter.symbol,
-          locale: formatter.locale,
-          decimalDigits: decimalDigits);
+      NumberFormat format = _formatter.format;
+      String? symbol = format.currencySymbol;
       String groupSep = format.symbols.GROUP_SEP;
       String decimalSep = format.symbols.DECIMAL_SEP;
 
       String newText = newValue.text;
+      try {
+        formatter.stringFromString(newText);
+      } on FormatException {
+        return oldValue;
+      }
+
       if (newText.length < oldValue.text.length) {
         for (int i = 0; i < newText.length; i++) {
           if (newText[i] != oldValue.text[i] &&
@@ -135,10 +145,12 @@ class CurrencyTextInputFormatter extends TextInputFormatter {
       }
       num parsed = format.parse(newText);
       Decimal value = Decimal.parse(parsed.toStringAsFixed(decimalDigits));
-      if (value == Decimal.zero) {
-        return TextEditingValue(
-            text: '',
-            selection: TextSelection.fromPosition(TextPosition(offset: 0)));
+      if (zeroIsEmpty) {
+        if (value == Decimal.zero) {
+          return TextEditingValue(
+              text: '',
+              selection: TextSelection.fromPosition(TextPosition(offset: 0)));
+        }
       }
       newText = format.format(parsed);
 
@@ -158,6 +170,10 @@ class CurrencyTextInputFormatter extends TextInputFormatter {
         baseOffset = newText.length;
       } else if (baseOffset < 0) {
         baseOffset = 0;
+      }
+      while (baseOffset < newText.length &&
+          !RegExp('[0-9]').hasMatch(newText[baseOffset])) {
+        baseOffset += 1;
       }
       return TextEditingValue(
           text: newText,
