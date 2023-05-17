@@ -1,3 +1,5 @@
+**THIS REPOSITORY IS CURRENTLY UNMAINTAINED** - _Forks/PRs are welcome_
+
 Flutter currency formatter
 
 **Features:**  
